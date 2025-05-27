@@ -320,6 +320,10 @@ class SimpleVNCProxy:
             
     def is_in_grace_period(self, client_ip):
         """检查是否在冷却期"""
+        # 如果没有活跃会话，不应该有冷却时间限制
+        if self.active_session is None:
+            return False
+            
         if client_ip not in self.rejected_ips:
             return False
             
