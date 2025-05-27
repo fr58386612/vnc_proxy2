@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vnc-proxy"
+version = "1.0.0"
+description = "智能VNC代理服务器，支持单用户连接控制和用户决策机制"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "VNC Proxy Developer"}
+]
+keywords = ["vnc", "proxy", "remote", "desktop"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Systems Administration",
+]
+
+dependencies = [
+    "pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=22.0",
+    "flake8>=5.0",
+]
+
+[project.scripts]
+vnc-proxy = "start_proxy:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/vnc-proxy"
+Repository = "https://github.com/yourusername/vnc-proxy"
+Issues = "https://github.com/yourusername/vnc-proxy/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*.py"]
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]

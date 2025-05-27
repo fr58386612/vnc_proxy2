@@ -1,0 +1,6 @@
+pillow>=10.0.0
+
+[dev]
+pytest>=7.0
+black>=22.0
+flake8>=5.0

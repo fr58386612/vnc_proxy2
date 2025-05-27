@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+vnc_proxy.egg-info/PKG-INFO
+vnc_proxy.egg-info/SOURCES.txt
+vnc_proxy.egg-info/dependency_links.txt
+vnc_proxy.egg-info/entry_points.txt
+vnc_proxy.egg-info/requires.txt
+vnc_proxy.egg-info/top_level.txt

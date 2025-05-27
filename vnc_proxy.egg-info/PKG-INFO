@@ -1,0 +1,224 @@
+Metadata-Version: 2.4
+Name: vnc-proxy
+Version: 1.0.0
+Summary: 智能VNC代理服务器，支持单用户连接控制和用户决策机制
+Author: VNC Proxy Developer
+License: MIT
+Project-URL: Homepage, https://github.com/yourusername/vnc-proxy
+Project-URL: Repository, https://github.com/yourusername/vnc-proxy
+Project-URL: Issues, https://github.com/yourusername/vnc-proxy/issues
+Keywords: vnc,proxy,remote,desktop
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: System :: Networking
+Classifier: Topic :: System :: Systems Administration
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pillow>=10.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: black>=22.0; extra == "dev"
+Requires-Dist: flake8>=5.0; extra == "dev"
+
+# VNC代理服务器
+
+一个智能的VNC代理服务器，支持单用户连接控制和用户决策机制。
+
+## 功能特性
+
+- **单用户连接控制**：同时只允许一个客户端连接VNC服务器
+- **智能连接管理**：当有新客户端尝试连接时，弹窗询问当前用户是否让出连接
+- **倒计时机制**：提供30秒倒计时，超时自动让新用户连接
+- **用户决策**：当前用户可以选择继续使用或让出连接给新用户
+- **图形界面**：提供直观的GUI管理界面
+- **日志记录**：详细的连接日志和状态记录
+
+## 系统要求
+
+- Python 3.7+
+- macOS / Windows / Linux
+- VNC服务器（如TightVNC、RealVNC等）
+
+## 安装步骤
+
+### 1. 克隆项目
+```bash
+git clone <repository-url>
+cd vnc_proxy2
+```
+
+### 2. 创建虚拟环境
+```bash
+# 使用uv创建虚拟环境
+uv venv
+source .venv/bin/activate  # macOS/Linux
+# 或者
+.venv\Scripts\activate     # Windows
+```
+
+### 3. 安装依赖
+```bash
+uv pip install -r requirements.txt
+```
+
+## 使用方法
+
+### 启动代理服务器
+
+#### GUI模式（推荐）
+```bash
+python start_proxy.py
+```
+
+#### 命令行模式
+```bash
+python start_proxy.py --no-gui
+```
+
+#### 自定义参数
+```bash
+python start_proxy.py --vnc-host 192.168.1.100 --vnc-port 5900 --proxy-port 5901
+```
+
+### 配置文件
+
+编辑 `config.json` 文件来自定义设置：
+
+```json
+{
+    "vnc_server": {
+        "host": "127.0.0.1",      // VNC服务器地址
+        "port": 5900,             // VNC服务器端口
+        "password": ""            // VNC密码（可选）
+    },
+    "proxy_server": {
+        "host": "0.0.0.0",        // 代理服务器监听地址
+        "port": 5901              // 代理服务器端口
+    },
+    "settings": {
+        "decision_timeout": 30,    // 决策超时时间（秒）
+        "max_pending_clients": 5,  // 最大等待客户端数
+        "log_level": "INFO",       // 日志级别
+        "auto_accept_timeout": false // 是否自动接受超时连接
+    }
+}
+```
+
+### 测试客户端
+
+使用测试客户端来验证代理功能：
+
+```bash
+# 启动单个测试客户端
+python test_client.py
+
+# 启动多个测试客户端（测试连接冲突）
+python test_client.py --multiple 3
+
+# 自定义测试参数
+python test_client.py --host 127.0.0.1 --port 5901 --duration 120
+```
+
+## 工作流程
+
+1. **启动代理服务器**：代理服务器在指定端口监听客户端连接
+2. **首个客户端连接**：第一个客户端直接连接到VNC服务器
+3. **后续客户端连接**：
+   - 新客户端尝试连接时，服务器端弹出决策窗口
+   - 显示新客户端信息和30秒倒计时
+   - 当前用户可选择：
+     - "我还要使用"：拒绝新连接，新客户端收到"有用户正在使用中"消息
+     - "让新用户连接"：断开当前连接，让新客户端连接
+   - 如果30秒内无响应，自动让新用户连接
+
+## 目录结构
+
+```
+vnc_proxy2/
+├── vnc_proxy_server.py    # 主要的代理服务器代码
+├── start_proxy.py         # 启动脚本
+├── test_client.py         # 测试客户端
+├── config.json           # 配置文件
+├── requirements.txt      # Python依赖
+├── README.md            # 项目说明
+└── vnc_proxy.log        # 运行日志（自动生成）
+```
+
+## API说明
+
+### VNCProxy类
+
+主要的代理服务器类，提供以下功能：
+
+- `start_server()`: 启动代理服务器
+- `handle_client_connection()`: 处理客户端连接
+- `show_decision_dialog()`: 显示决策对话框
+- `start_countdown()`: 启动倒计时
+- `accept_client()`: 接受客户端连接
+- `reject_client()`: 拒绝客户端连接
+
+### 配置参数
+
+- `vnc_host`: VNC服务器地址
+- `vnc_port`: VNC服务器端口
+- `proxy_port`: 代理服务器端口
+- `decision_timeout`: 决策超时时间
+
+## 日志说明
+
+程序会在当前目录生成 `vnc_proxy.log` 文件，记录：
+- 服务器启动/停止事件
+- 客户端连接/断开事件
+- 用户决策记录
+- 错误和异常信息
+
+## 故障排除
+
+### 常见问题
+
+1. **无法连接到VNC服务器**
+   - 检查VNC服务器是否运行
+   - 确认VNC服务器地址和端口配置正确
+   - 检查防火墙设置
+
+2. **决策窗口不显示**
+   - 确保以GUI模式运行
+   - 检查是否有其他窗口遮挡
+   - 确认tkinter正常工作
+
+3. **客户端连接被拒绝**
+   - 检查代理服务器端口是否被占用
+   - 确认代理服务器正在运行
+   - 查看日志文件获取详细错误信息
+
+### 调试模式
+
+启用详细日志：
+```bash
+python start_proxy.py --log-level DEBUG
+```
+
+## 许可证
+
+MIT License
+
+## 贡献
+
+欢迎提交问题报告和功能请求。
+
+## 更新日志
+
+### v1.0.0
+- 初始版本
+- 基本的VNC代理功能
+- GUI决策界面
+- 倒计时机制
+- 配置文件支持
