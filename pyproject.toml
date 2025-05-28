@@ -30,6 +30,7 @@ classifiers = [
 
 dependencies = [
     "pillow>=10.0.0",
+    "pystray>=0.19.4",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,9 @@ dev = [
     "pytest>=7.0",
     "black>=22.0",
     "flake8>=5.0",
+]
+build = [
+    "pyinstaller>=5.0",
 ]
 
 [project.scripts]

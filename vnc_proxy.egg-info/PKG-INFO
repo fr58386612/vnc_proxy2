@@ -23,202 +23,208 @@ Classifier: Topic :: System :: Systems Administration
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 Requires-Dist: pillow>=10.0.0
+Requires-Dist: pystray>=0.19.4
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0; extra == "dev"
 Requires-Dist: black>=22.0; extra == "dev"
 Requires-Dist: flake8>=5.0; extra == "dev"
+Provides-Extra: build
+Requires-Dist: pyinstaller>=5.0; extra == "build"
 
 # VNC代理服务器
 
-一个智能的VNC代理服务器，支持单用户连接控制和用户决策机制。
+一个智能的VNC代理服务器，支持单用户连接控制和用户决策机制，现在还支持系统托盘显示和exe打包。
 
 ## 功能特性
 
-- **单用户连接控制**：同时只允许一个客户端连接VNC服务器
-- **智能连接管理**：当有新客户端尝试连接时，弹窗询问当前用户是否让出连接
-- **倒计时机制**：提供30秒倒计时，超时自动让新用户连接
-- **用户决策**：当前用户可以选择继续使用或让出连接给新用户
-- **图形界面**：提供直观的GUI管理界面
-- **日志记录**：详细的连接日志和状态记录
+- ✅ **智能连接管理**: 只允许一个客户端同时连接VNC服务器
+- ✅ **用户决策机制**: 当有新客户端尝试连接时，询问当前用户是否允许
+- ✅ **冷却机制**: 被拒绝的客户端需要等待1分钟才能重新尝试连接
+- ✅ **友好的GUI界面**: 使用tkinter构建的简洁界面
+- ✅ **系统托盘支持**: 可以最小化到系统托盘运行
+- ✅ **exe打包**: 可以打包成独立的exe文件，无需Python环境
+- ✅ **详细日志记录**: 记录所有连接活动和操作
+- ✅ **命令行支持**: 支持无GUI模式运行
 
-## 系统要求
+## 新增功能
 
-- Python 3.7+
-- macOS / Windows / Linux
-- VNC服务器（如TightVNC、RealVNC等）
+### 系统托盘功能
+- 点击"最小化到托盘"按钮将应用最小化到系统托盘
+- 右键托盘图标可以显示/隐藏窗口、启动/停止服务器、退出应用
+- 关闭窗口时会自动最小化到托盘而不是退出程序
 
-## 安装步骤
+### exe打包功能
+- 使用PyInstaller将应用打包为独立的exe文件
+- 包含所有依赖，无需单独安装Python环境
+- 支持图标和无控制台窗口模式
 
-### 1. 克隆项目
+## 安装和使用
+
+### 方法1：从源码运行
+
+1. **安装依赖**
+   ```bash
+   # 使用uv安装依赖
+   uv pip install pillow>=10.0.0 pystray>=0.19.4
+   ```
+
+2. **运行程序**
+   ```bash
+   # GUI模式（推荐）
+   python vnc_proxy.py
+   
+   # 命令行模式
+   python vnc_proxy.py --no-gui
+   
+   # 自定义参数
+   python vnc_proxy.py --vnc-host 192.168.1.100 --vnc-port 5900 --proxy-port 5901
+   ```
+
+### 方法2：构建exe文件
+
+1. **一键构建**
+   ```bash
+   # 使用批处理文件（推荐）
+   build.bat
+   
+   # 或直接运行Python脚本
+   uv run build.py
+   ```
+
+2. **运行exe文件**
+   - 构建完成后，在`dist`目录中找到`VNC代理服务器.exe`
+   - 双击运行即可启动应用
+   - 无需安装Python环境
+
+## 使用说明
+
+### GUI界面操作
+
+1. **启动服务器**: 点击"启动服务器"按钮
+2. **监控连接**: 界面会实时显示服务器状态和客户端连接信息
+3. **处理新连接**: 当有新客户端尝试连接时，会弹出决策对话框
+4. **系统托盘**: 点击"最小化到托盘"或直接关闭窗口将应用最小化到系统托盘
+
+### 系统托盘功能
+
+- **显示窗口**: 重新显示主窗口
+- **隐藏窗口**: 隐藏主窗口到托盘
+- **启动服务器**: 从托盘直接启动服务器
+- **停止服务器**: 从托盘停止服务器
+- **退出**: 完全退出应用程序
+
+### 决策对话框
+
+当有新客户端尝试连接时：
+- **我还要继续使用**: 拒绝新连接，继续当前会话
+- **让新用户连接**: 断开当前连接，允许新用户使用
+- **自动决策**: 5秒后如果没有选择，自动允许新用户连接
+
+## 命令行参数
+
 ```bash
-git clone <repository-url>
-cd vnc_proxy2
+python vnc_proxy.py [选项]
+
+选项:
+  --vnc-host HOST      VNC服务器地址 (默认: 127.0.0.1)
+  --vnc-port PORT      VNC服务器端口 (默认: 5900)
+  --proxy-port PORT    代理服务器端口 (默认: 5901)
+  --no-gui            不启动GUI界面，仅命令行模式
+  -h, --help          显示帮助信息
 ```
 
-### 2. 创建虚拟环境
-```bash
-# 使用uv创建虚拟环境
-uv venv
-source .venv/bin/activate  # macOS/Linux
-# 或者
-.venv\Scripts\activate     # Windows
-```
+## 工作原理
 
-### 3. 安装依赖
-```bash
-uv pip install -r requirements.txt
-```
+1. **代理监听**: 在指定端口（默认5901）监听客户端连接
+2. **连接检查**: 检查是否已有活跃会话和客户端冷却状态
+3. **用户决策**: 如果有冲突，通过GUI询问用户如何处理
+4. **数据转发**: 在客户端和VNC服务器之间建立双向数据转发
+5. **会话管理**: 监控连接状态，自动清理断开的会话
 
-## 使用方法
+## 技术栈
 
-### 启动代理服务器
+- **Python 3.8+**: 主要编程语言
+- **tkinter**: GUI界面框架
+- **pystray**: 系统托盘支持
+- **Pillow**: 图像处理（用于托盘图标）
+- **PyInstaller**: exe打包工具
+- **socket**: 网络通信
+- **threading**: 多线程处理
 
-#### GUI模式（推荐）
-```bash
-python start_proxy.py
-```
-
-#### 命令行模式
-```bash
-python start_proxy.py --no-gui
-```
-
-#### 自定义参数
-```bash
-python start_proxy.py --vnc-host 192.168.1.100 --vnc-port 5900 --proxy-port 5901
-```
-
-### 配置文件
-
-编辑 `config.json` 文件来自定义设置：
-
-```json
-{
-    "vnc_server": {
-        "host": "127.0.0.1",      // VNC服务器地址
-        "port": 5900,             // VNC服务器端口
-        "password": ""            // VNC密码（可选）
-    },
-    "proxy_server": {
-        "host": "0.0.0.0",        // 代理服务器监听地址
-        "port": 5901              // 代理服务器端口
-    },
-    "settings": {
-        "decision_timeout": 30,    // 决策超时时间（秒）
-        "max_pending_clients": 5,  // 最大等待客户端数
-        "log_level": "INFO",       // 日志级别
-        "auto_accept_timeout": false // 是否自动接受超时连接
-    }
-}
-```
-
-### 测试客户端
-
-使用测试客户端来验证代理功能：
-
-```bash
-# 启动单个测试客户端
-python test_client.py
-
-# 启动多个测试客户端（测试连接冲突）
-python test_client.py --multiple 3
-
-# 自定义测试参数
-python test_client.py --host 127.0.0.1 --port 5901 --duration 120
-```
-
-## 工作流程
-
-1. **启动代理服务器**：代理服务器在指定端口监听客户端连接
-2. **首个客户端连接**：第一个客户端直接连接到VNC服务器
-3. **后续客户端连接**：
-   - 新客户端尝试连接时，服务器端弹出决策窗口
-   - 显示新客户端信息和30秒倒计时
-   - 当前用户可选择：
-     - "我还要使用"：拒绝新连接，新客户端收到"有用户正在使用中"消息
-     - "让新用户连接"：断开当前连接，让新客户端连接
-   - 如果30秒内无响应，自动让新用户连接
-
-## 目录结构
+## 项目结构
 
 ```
 vnc_proxy2/
-├── vnc_proxy_server.py    # 主要的代理服务器代码
-├── start_proxy.py         # 启动脚本
-├── test_client.py         # 测试客户端
-├── config.json           # 配置文件
-├── requirements.txt      # Python依赖
-├── README.md            # 项目说明
-└── vnc_proxy.log        # 运行日志（自动生成）
+├── vnc_proxy.py          # 主程序文件
+├── build.py              # 打包脚本
+├── build.bat             # Windows一键打包
+├── pyproject.toml        # 项目配置
+├── README.md             # 说明文档
+├── vnc_proxy.log         # 运行日志
+└── dist/                 # 构建输出目录
+    └── VNC代理服务器.exe  # 打包后的exe文件
 ```
 
-## API说明
+## 日志记录
 
-### VNCProxy类
-
-主要的代理服务器类，提供以下功能：
-
-- `start_server()`: 启动代理服务器
-- `handle_client_connection()`: 处理客户端连接
-- `show_decision_dialog()`: 显示决策对话框
-- `start_countdown()`: 启动倒计时
-- `accept_client()`: 接受客户端连接
-- `reject_client()`: 拒绝客户端连接
-
-### 配置参数
-
-- `vnc_host`: VNC服务器地址
-- `vnc_port`: VNC服务器端口
-- `proxy_port`: 代理服务器端口
-- `decision_timeout`: 决策超时时间
-
-## 日志说明
-
-程序会在当前目录生成 `vnc_proxy.log` 文件，记录：
-- 服务器启动/停止事件
-- 客户端连接/断开事件
-- 用户决策记录
-- 错误和异常信息
+程序运行时会生成详细的日志记录：
+- 文件日志: `vnc_proxy_simple.log`
+- 控制台输出: 实时显示运行状态
+- 记录内容: 连接建立、断开、用户决策、错误信息等
 
 ## 故障排除
 
 ### 常见问题
 
-1. **无法连接到VNC服务器**
-   - 检查VNC服务器是否运行
-   - 确认VNC服务器地址和端口配置正确
-   - 检查防火墙设置
+1. **端口被占用**
+   - 更改proxy-port参数到其他端口
+   - 检查是否有其他程序占用5901端口
 
-2. **决策窗口不显示**
-   - 确保以GUI模式运行
-   - 检查是否有其他窗口遮挡
-   - 确认tkinter正常工作
+2. **无法连接到VNC服务器**
+   - 确认VNC服务器正在运行
+   - 检查vnc-host和vnc-port参数是否正确
+   - 确认网络连接正常
 
-3. **客户端连接被拒绝**
-   - 检查代理服务器端口是否被占用
-   - 确认代理服务器正在运行
-   - 查看日志文件获取详细错误信息
+3. **GUI界面无法显示**
+   - 确认系统支持tkinter
+   - 尝试使用--no-gui参数运行命令行模式
+
+4. **托盘图标不显示**
+   - 确认系统支持系统托盘
+   - 检查系统托盘设置是否允许显示所有图标
+
+5. **exe构建失败**
+   - 确认已安装所有依赖
+   - 检查Python版本是否兼容
+   - 确认有足够的磁盘空间
 
 ### 调试模式
 
-启用详细日志：
-```bash
-python start_proxy.py --log-level DEBUG
+启用详细日志输出：
+```python
+# 修改日志级别为DEBUG
+logging.basicConfig(level=logging.DEBUG, ...)
 ```
 
 ## 许可证
 
-MIT License
+MIT License - 详见LICENSE文件
 
 ## 贡献
 
-欢迎提交问题报告和功能请求。
+欢迎提交Issue和Pull Request来改进这个项目。
 
 ## 更新日志
 
+### v1.1.0 (2025-05-28)
+- ✅ 新增系统托盘支持
+- ✅ 新增exe打包功能
+- ✅ 改进窗口关闭行为
+- ✅ 优化用户体验
+
 ### v1.0.0
-- 初始版本
-- 基本的VNC代理功能
-- GUI决策界面
-- 倒计时机制
-- 配置文件支持
+- ✅ 基本VNC代理功能
+- ✅ 单用户连接控制
+- ✅ GUI界面
+- ✅ 用户决策机制
+- ✅ 冷却机制

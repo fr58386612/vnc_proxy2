@@ -13,6 +13,10 @@ from tkinter import messagebox
 import logging
 from datetime import datetime
 import queue
+import pystray
+from PIL import Image, ImageDraw
+import sys
+import os
 
 # 配置日志
 logging.basicConfig(
@@ -26,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SimpleVNCProxy:
-    def __init__(self, vnc_host="127.0.0.1", vnc_port=5900, proxy_port=5901):
+    def __init__(self, vnc_host="127.0.0.1", vnc_port=5901, proxy_port=5900):
         self.vnc_host = vnc_host
         self.vnc_port = vnc_port
         self.proxy_port = proxy_port
@@ -43,6 +47,10 @@ class SimpleVNCProxy:
         self.root = None
         self.decision_dialog = None
         self.user_decision = None
+        
+        # 系统托盘
+        self.tray_icon = None
+        self.show_gui = True
         
         # 被拒绝的客户端冷却
         self.rejected_ips = {}  # ip -> reject_time
@@ -374,12 +382,72 @@ class SimpleVNCProxy:
                 client_socket.close()
             except:
                 pass
-                
+
+    def create_tray_icon(self):
+        """创建系统托盘图标"""
+        # 创建简单的图标
+        image = Image.new('RGB', (64, 64), color='blue')
+        draw = ImageDraw.Draw(image)
+        draw.rectangle([16, 16, 48, 48], fill='white')
+        draw.text((20, 25), "VNC", fill='blue')
+        
+        # 创建托盘菜单
+        menu = pystray.Menu(
+            pystray.MenuItem("显示窗口", self.show_window),
+            pystray.MenuItem("隐藏窗口", self.hide_window),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("启动服务器", self.start_server_tray, enabled=lambda item: not self.is_running),
+            pystray.MenuItem("停止服务器", self.stop_server_tray, enabled=lambda item: self.is_running),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("退出", self.quit_application)
+        )
+        
+        self.tray_icon = pystray.Icon("VNC代理", image, "VNC代理服务器", menu)
+        
+    def show_window(self, icon=None, item=None):
+        """显示主窗口"""
+        if self.root:
+            self.root.deiconify()
+            self.root.lift()
+            self.root.attributes('-topmost', True)
+            self.root.after(100, lambda: self.root.attributes('-topmost', False))
+            
+    def hide_window(self, icon=None, item=None):
+        """隐藏主窗口到系统托盘"""
+        if self.root:
+            self.root.withdraw()
+            
+    def start_server_tray(self, icon=None, item=None):
+        """从系统托盘启动服务器"""
+        if not self.is_running:
+            threading.Thread(target=self.start_server, daemon=True).start()
+            
+    def stop_server_tray(self, icon=None, item=None):
+        """从系统托盘停止服务器"""
+        self.stop_server()
+        
+    def quit_application(self, icon=None, item=None):
+        """退出应用程序"""
+        self.stop_server()
+        if self.tray_icon:
+            self.tray_icon.stop()
+        if self.root:
+            self.root.quit()
+        sys.exit(0)
+        
+    def on_window_close(self):
+        """窗口关闭事件处理"""
+        # 最小化到系统托盘而不是退出
+        self.hide_window()
+
     def start_gui(self):
         """启动GUI"""
         self.root = tk.Tk()
         self.root.title("简化VNC代理服务器")
         self.root.geometry("400x300")
+        
+        # 设置窗口关闭事件
+        self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
         
         # 主框架
         frame = tk.Frame(self.root, padx=20, pady=20)
@@ -411,6 +479,17 @@ class SimpleVNCProxy:
                                  command=self.stop_server, state=tk.DISABLED)
         self.stop_btn.pack(side=tk.LEFT, padx=5)
         
+        # 托盘按钮
+        self.tray_btn = tk.Button(btn_frame, text="最小化到托盘",
+                                 command=self.hide_window)
+        self.tray_btn.pack(side=tk.LEFT, padx=5)
+        
+        # 创建系统托盘图标
+        self.create_tray_icon()
+        
+        # 在单独线程中运行托盘图标
+        threading.Thread(target=self.tray_icon.run, daemon=True).start()
+        
         # 启动状态更新
         self.update_gui_status()
         
@@ -432,8 +511,9 @@ class SimpleVNCProxy:
                 pass
         if self.active_session:
             self.cleanup_session()
-        self.start_btn.config(state=tk.NORMAL)
-        self.stop_btn.config(state=tk.DISABLED)
+        if self.root:
+            self.start_btn.config(state=tk.NORMAL)
+            self.stop_btn.config(state=tk.DISABLED)
         
     def update_gui_status(self):
         """更新GUI状态"""
@@ -458,8 +538,8 @@ def main():
     
     parser = argparse.ArgumentParser(description='简化VNC代理服务器')
     parser.add_argument('--vnc-host', default='127.0.0.1', help='VNC服务器地址')
-    parser.add_argument('--vnc-port', type=int, default=5900, help='VNC服务器端口')
-    parser.add_argument('--proxy-port', type=int, default=5901, help='代理服务器端口')
+    parser.add_argument('--vnc-port', type=int, default=5901, help='VNC服务器端口')
+    parser.add_argument('--proxy-port', type=int, default=5900, help='代理服务器端口')
     parser.add_argument('--no-gui', action='store_true', help='不启动GUI界面')
     
     args = parser.parse_args()
