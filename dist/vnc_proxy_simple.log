@@ -15,3 +15,11 @@
 2025-05-28 10:48:34,896 - INFO - 数据转发异常: 客户端->VNC - [WinError 10053] 你的主机中的软件中止了一个已建立的连接。
 2025-05-28 10:48:34,896 - INFO - 清理会话: ('127.0.0.1', 46064)
 2025-05-28 10:48:34,896 - INFO - 数据转发异常: VNC->客户端 - [WinError 10053] 你的主机中的软件中止了一个已建立的连接。
+2025-05-28 11:14:54,380 - ERROR - An error occurred when calling message handler
+Traceback (most recent call last):
+  File "pystray\_win32.py", line 412, in _dispatcher
+  File "pystray\_win32.py", line 224, in _on_notify
+  File "pystray\_base.py", line 328, in inner
+  File "pystray\_base.py", line 453, in __call__
+  File "vnc_proxy.py", line 436, in quit_application
+SystemExit: 0
